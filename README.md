@@ -70,6 +70,57 @@ Para ver os logs da extensão:
 2. Procure por mensagens começando com `[Screenshot Reminder]`
 3. Você verá quando o timer inicia e quando o lembrete é exibido
 
+## Testes Automatizados
+
+Este projeto inclui uma suite de testes automatizados usando Jest.
+
+### Instalando Dependências
+
+Antes de executar os testes, instale as dependências:
+
+```bash
+npm install
+```
+
+### Executando os Testes
+
+```bash
+# Executar todos os testes
+npm test
+
+# Executar testes em modo watch (re-executa quando arquivos mudam)
+npm run test:watch
+
+# Executar testes com relatório de cobertura
+npm run test:coverage
+```
+
+### Estrutura de Testes
+
+```
+tests/
+├── setup.js          # Mocks das APIs do Chrome
+├── popup.test.js     # Testes do popup de configurações
+└── content.test.js   # Testes do content script
+```
+
+### O que é Testado
+
+**popup.test.js**:
+- ✅ Carregamento de mensagem salva
+- ✅ Salvamento de mensagem customizada
+- ✅ Restauração de mensagem padrão
+- ✅ Validação de entrada
+- ✅ Contador de caracteres
+
+**content.test.js**:
+- ✅ Carregamento de mensagem customizada
+- ✅ Criação e remoção do banner
+- ✅ Detecção de URLs do Google Meet
+- ✅ Lógica do timer de 3 minutos
+- ✅ Integração de mensagem no banner
+
 ---
 
 **Desenvolvido para ajudar você a nunca esquecer de tirar prints das suas reuniões! 📸**
+
