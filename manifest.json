@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Google Meet Screenshot Reminder",
+  "version": "1.0.0",
+  "description": "Lembra você de tirar prints durante chamadas do Google Meet após 3 minutos",
+  "permissions": [
+    "notifications",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icon48.png",
+      "128": "icon128.png"
+    },
+    "default_title": "Configurar Lembretes de Screenshot"
+  },
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
