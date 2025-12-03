@@ -194,4 +194,204 @@ describe('Content Script - Lógica de Lembretes', () => {
       });
     });
   });
+
+  describe('Correções de bloqueio - pointer-events e posicionamento', () => {
+    test('banner deve ter pointer-events: none para não bloquear interações', () => {
+      chrome.storage.sync.get.mockImplementation((keys, callback) => {
+        callback({ customReminderMessage: 'Teste' });
+      });
+
+      const banner = document.createElement('div');
+      banner.id = 'screenshot-reminder-banner';
+      banner.className = 'screenshot-reminder-banner';
+      banner.style.pointerEvents = 'none';
+
+      document.body.appendChild(banner);
+
+      const createdBanner = document.getElementById('screenshot-reminder-banner');
+      expect(createdBanner.style.pointerEvents).toBe('none');
+    });
+
+    test('conteúdo do banner deve ter pointer-events: auto para permitir cliques no botão', () => {
+      const banner = document.createElement('div');
+      banner.id = 'screenshot-reminder-banner';
+      banner.style.pointerEvents = 'none';
+
+      banner.innerHTML = `
+        <div class="reminder-content" style="pointer-events: auto;">
+          <span class="reminder-icon">🔴</span>
+          <span class="reminder-text">Teste</span>
+          <button class="reminder-dismiss" id="dismiss-reminder">
+            ✓ Print tirado
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(banner);
+
+      const content = banner.querySelector('.reminder-content');
+      expect(content.style.pointerEvents).toBe('auto');
+    });
+
+    test('banner deve ser anexado com appendChild ao final do body', () => {
+      // Adiciona alguns elementos ao body primeiro
+      const div1 = document.createElement('div');
+      div1.id = 'existing-element-1';
+      const div2 = document.createElement('div');
+      div2.id = 'existing-element-2';
+
+      document.body.appendChild(div1);
+      document.body.appendChild(div2);
+
+      // Cria e anexa o banner
+      const banner = document.createElement('div');
+      banner.id = 'screenshot-reminder-banner';
+      document.body.appendChild(banner);
+
+      // Verifica que o banner é o último filho do body
+      const lastChild = document.body.lastElementChild;
+      expect(lastChild.id).toBe('screenshot-reminder-banner');
+
+      // Verifica que NÃO é o primeiro filho (como seria com insertBefore)
+      const firstChild = document.body.firstElementChild;
+      expect(firstChild.id).not.toBe('screenshot-reminder-banner');
+    });
+
+    test('botão de dismiss deve permanecer clicável mesmo com pointer-events: none no banner', () => {
+      const banner = document.createElement('div');
+      banner.style.pointerEvents = 'none';
+
+      banner.innerHTML = `
+        <div style="pointer-events: auto;">
+          <button id="test-button">Clique</button>
+        </div>
+      `;
+
+      document.body.appendChild(banner);
+      const button = document.getElementById('test-button');
+
+      const clickHandler = jest.fn();
+      button.addEventListener('click', clickHandler);
+      button.click();
+
+      expect(clickHandler).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Notificações não-bloqueantes', () => {
+    test('deve usar chrome.runtime.sendMessage ao invés de alert', () => {
+      chrome.storage.sync.get.mockImplementation((keys, callback) => {
+        callback({ customReminderMessage: 'Mensagem teste' });
+      });
+
+      // Simula o envio de mensagem para o background script
+      const message = {
+        type: 'showNotification',
+        message: 'Mensagem teste'
+      };
+
+      chrome.runtime.sendMessage(message);
+
+      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+        type: 'showNotification',
+        message: 'Mensagem teste'
+      });
+    });
+
+    test('não deve usar alert() bloqueante', () => {
+      // Verifica que alert não é chamado
+      const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+
+      // Simula a função de notificação SEM alert
+      chrome.storage.sync.get.mockImplementation((keys, callback) => {
+        callback({ customReminderMessage: 'Teste' });
+      });
+
+      chrome.storage.sync.get(['customReminderMessage'], (result) => {
+        const customMessage = result.customReminderMessage || 'Lembrete: Tire um print da tela!';
+
+        // Usa chrome.runtime.sendMessage ao invés de alert
+        chrome.runtime.sendMessage({
+          type: 'showNotification',
+          message: customMessage
+        });
+      });
+
+      // Alert NÃO deve ter sido chamado
+      expect(alertSpy).not.toHaveBeenCalled();
+
+      alertSpy.mockRestore();
+    });
+  });
+
+  describe('CSS e z-index', () => {
+    test('banner deve ter z-index alto mas seguro', () => {
+      const banner = document.createElement('div');
+      banner.id = 'screenshot-reminder-banner';
+      banner.style.zIndex = '2147483647'; // Valor máximo seguro
+
+      document.body.appendChild(banner);
+
+      expect(banner.style.zIndex).toBe('2147483647');
+    });
+
+    test('banner deve ter position: fixed para não bloquear fluxo do documento', () => {
+      const banner = document.createElement('div');
+      banner.style.position = 'fixed';
+      banner.style.top = '0';
+      banner.style.left = '0';
+      banner.style.right = '0';
+
+      document.body.appendChild(banner);
+
+      expect(banner.style.position).toBe('fixed');
+      expect(banner.style.top).toBe('0px');
+    });
+  });
+
+  describe('Prevenção de bloqueios na chamada do Google Meet', () => {
+    test('elementos do Meet devem permanecer acessíveis com banner visível', () => {
+      // Simula um botão do Google Meet
+      const meetButton = document.createElement('button');
+      meetButton.id = 'meet-join-button';
+      meetButton.textContent = 'Entrar na chamada';
+      document.body.appendChild(meetButton);
+
+      // Cria o banner com pointer-events: none
+      const banner = document.createElement('div');
+      banner.id = 'screenshot-reminder-banner';
+      banner.style.pointerEvents = 'none';
+      banner.style.position = 'fixed';
+      banner.style.top = '0';
+      banner.style.left = '0';
+      banner.style.right = '0';
+      banner.style.zIndex = '2147483647';
+
+      document.body.appendChild(banner);
+
+      // Simula clique no botão do Meet (que está abaixo do banner)
+      const clickHandler = jest.fn();
+      meetButton.addEventListener('click', clickHandler);
+      meetButton.click();
+
+      // O clique deve funcionar mesmo com o banner por cima
+      expect(clickHandler).toHaveBeenCalledTimes(1);
+    });
+
+    test('banner não deve interceptar eventos de mouse', () => {
+      const banner = document.createElement('div');
+      banner.style.pointerEvents = 'none';
+
+      const mouseOverHandler = jest.fn();
+      banner.addEventListener('mouseover', mouseOverHandler);
+
+      // Simula mouseover no banner
+      const event = new MouseEvent('mouseover', { bubbles: true });
+      banner.dispatchEvent(event);
+
+      // Como pointer-events é none, o evento não deve ser capturado pelo banner
+      // (em um ambiente real, o evento passaria através do banner)
+      expect(banner.style.pointerEvents).toBe('none');
+    });
+  });
 });

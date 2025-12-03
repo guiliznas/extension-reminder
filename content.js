@@ -15,9 +15,11 @@ function showReminderBanner() {
     const banner = document.createElement('div');
     banner.id = 'screenshot-reminder-banner';
     banner.className = 'screenshot-reminder-banner';
+    // Garante que o banner não bloqueie interações com a página
+    banner.style.pointerEvents = 'none';
 
     banner.innerHTML = `
-      <div class="reminder-content">
+      <div class="reminder-content" style="pointer-events: auto;">
         <span class="reminder-icon">🔴</span>
         <span class="reminder-text">${customMessage}</span>
         <button class="reminder-dismiss" id="dismiss-reminder">
@@ -26,7 +28,8 @@ function showReminderBanner() {
       </div>
     `;
 
-    document.body.insertBefore(banner, document.body.firstChild);
+    // Anexa ao final do body para não interferir com elementos do Meet
+    document.body.appendChild(banner);
     bannerShown = true;
 
     // Adiciona evento ao botão de dismiss
@@ -58,12 +61,18 @@ function showNotification() {
     audio.play().catch(() => {}); // Ignora erro se não conseguir tocar
   }
 
+  // Envia notificação do Chrome (não bloqueante)
   chrome.storage.sync.get(['customReminderMessage'], (result) => {
     const customMessage = result.customReminderMessage || 'Lembrete: Tire um print da tela!';
-    alert(customMessage);
+
+    // Usa a API de notificações do Chrome ao invés de alert()
+    chrome.runtime.sendMessage({
+      type: 'showNotification',
+      message: customMessage
+    });
   });
 
-
+  // Mostra o banner visual (não bloqueante)
   showReminderBanner();
 }
 

@@ -5,13 +5,15 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 999999;
+  z-index: 2147483647; /* Valor máximo seguro para z-index */
   background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
   color: white;
   padding: 16px 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   animation: slideDown 0.3s ease-out;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Garante que o banner não bloqueie cliques na página */
+  pointer-events: none;
 }
 
 .screenshot-reminder-banner.fade-out {
@@ -25,6 +27,8 @@
   gap: 16px;
   max-width: 1200px;
   margin: 0 auto;
+  /* Permite interação com o conteúdo do banner (especialmente o botão) */
+  pointer-events: auto;
 }
 
 .reminder-icon {

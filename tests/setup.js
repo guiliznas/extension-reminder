@@ -17,6 +17,14 @@ global.chrome = {
     create: jest.fn((notificationId, options, callback) => {
       if (callback) callback(notificationId);
     })
+  },
+  runtime: {
+    sendMessage: jest.fn((message, callback) => {
+      if (callback) callback();
+    }),
+    onMessage: {
+      addListener: jest.fn()
+    }
   }
 };
 
